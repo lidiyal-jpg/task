@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Custom Trading Indicators</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; }
+        canvas { max-width: 800px; margin: auto; }
+        .controls { margin-bottom: 20px; }
+    </style>
+</head>
+<body>
+
+    <h2>Custom Trading Indicators & Strategies</h2>
+
+    <div class="controls">
+        <label for="indicator">Choose Indicator:</label>
+        <select id="indicator">
+            <option value="sma">Simple Moving Average (SMA)</option>
+            <option value="bollinger">Bollinger Bands</option>
+        </select>
+
+        <label for="period">Period:</label>
+        <input type="number" id="period" value="20" min="2">
+
+        <button onclick="applyIndicator()">Apply</button>
+    </div>
+
+    <canvas id="chart"></canvas>
+
+    <script>
+        
+        function generateRandomPrices(days) 
+        {
+            let prices = [];
+            let price = 100;
+            for (let i = 0; i < days; i++) 
+            {
+                price += (Math.random() - 0.5) * 5;
+                prices.push(price.toFixed(2));
+            }
+            return prices;
+        }
+
+        
+        function calculateSMA(data, windowSize) 
+        {
+            let sma = [];
+            for (let i = 0; i < data.length; i++)
+            {
+                if (i < windowSize - 1) 
+                {
+                    sma.push(null);
+                } 
+                else 
+                {
+                    let sum = 0;
+                    for (let j = i - windowSize + 1; j <= i; j++) 
+                    {
+                        sum += parseFloat(data[j]);
+                    }
+                    sma.push((sum / windowSize).toFixed(2));
+                }
+            }
+            return sma;
+        }
+
+        
+        function calculateBollingerBands(data, period) {
+            let upperBand = [], lowerBand = [];
+            for (let i = 0; i < data.length; i++) 
+            {
+                if (i < period - 1) 
+            {
+                    upperBand.push(null);
+                    lowerBand.push(null);
+            } 
+                else 
+                {
+                    let sum = 0, squaredSum = 0;
+                    for (let j = i - period + 1; j <= i; j++) {
+                        let price = parseFloat(data[j]);
+                        sum += price;
+                        squaredSum += price * price;
+                    }
+                    let mean = sum / period;
+                    let variance = (squaredSum / period) - (mean * mean);
+                    let stdDev = Math.sqrt(variance);
+                    upperBand.push((mean + 2 * stdDev).toFixed(2));
+                    lowerBand.push((mean - 2 * stdDev).toFixed(2));
+                }
+            }
+            return { upperBand, lowerBand };
+        }
+
+        
+        function detectBuySignals(prices, sma)
+        {
+            return prices.map((price, index) =>
+                (index > 0 && prices[index - 1] < sma[index - 1] && price > sma[index])
+                ? price : null
+            );
+        }
+
+        
+        const days = 100;
+        let stockPrices = generateRandomPrices(days);
+        let movingAverage = calculateSMA(stockPrices, 20);
+        let bollinger = calculateBollingerBands(stockPrices, 20);
+        let buySignals = detectBuySignals(stockPrices, movingAverage);
+
+        
+        const ctx = document.getElementById('chart').getContext('2d');
+        let chart = new Chart(ctx) 
+        {
+            type: 'line'
+            data: 
+            {
+                labels: Array.from({ length: days }, (_, i) => i + 1)
+                datasets
+                [
+                    { label: 'Stock Price', data: stockPrices, borderColor: 'blue', fill: false },
+                    { label: 'SMA (20)', data: movingAverage, borderColor: 'red', fill: false },
+                    { label: 'Upper Bollinger Band', data: bollinger.upperBand, borderColor: 'green', borderDash: [5, 5], fill: false },
+                    { label: 'Lower Bollinger Band', data: bollinger.lowerBand, borderColor: 'purple', borderDash: [5, 5], fill: false },
+                    { label: 'Buy Signal', data: buySignals, borderColor: 'gold', pointRadius: 5, pointStyle: 'circle', type: 'scatter' }
+                ]
+            }
+            options:{responsive; true, maintainAspectRatio;false }
+        }
+
+        
+        function applyIndicator() 
+        {
+            let selectedIndicator = document.getElementById('indicator').value;
+            let period = parseInt(document.getElementById('period').value);
+
+            if (selectedIndicator === 'sma') 
+            {
+                movingAverage = calculateSMA(stockPrices, period);
+                buySignals = detectBuySignals(stockPrices, movingAverage);
+                chart.data.datasets[1].data = movingAverage;
+                chart.data.datasets[4].data = buySignals;
+            } 
+            else if (selectedIndicator === 'bollinger') 
+            {
+                bollinger = calculateBollingerBands(stockPrices, period);
+                chart.data.datasets[2].data = bollinger.upperBand;
+                chart.data.datasets[3].data = bollinger.lowerBand;
+            }
+            chart.update();
+        }
+    </script>
+
+</body>
+</html>

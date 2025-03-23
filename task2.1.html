@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Currency Converter</title>
+    <style>
+        body 
+        {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin: 50px;
+        }
+        select, input 
+        {
+            padding: 10px;
+            margin: 10px;
+        }
+    </style>
+</head>
+<body>
+
+    <h2>Currency Converter</h2>
+    
+    <label for="currency">Select Currency:</label>
+    <select id="currency">
+        <option value="USD">USD</option>
+        <option value="EUR">EUR</option>
+        <option value="GBP">GBP</option>
+        <option value="JPY">JPY</option>
+    </select>
+
+    <h3>Asset Value: <span id="convertedValue">100 USD</span></h3>
+
+    <script>
+        const baseCurrency = "USD"; 
+        let assetValue = 100;
+
+        async function fetchExchangeRate(targetCurrency) 
+        {
+            const apiKey = "YOUR_API_KEY"; 
+            const url = https://v6.exchangerate-api.com/v6/${apiKey}/latest/USD;
+
+            try 
+            {
+                let response = await fetch(url);
+                let data = await response.json();
+                return data.conversion_rates[targetCurrency];
+            } 
+            catch (error) 
+            {
+                console.error("Error fetching exchange rate:", error);
+                return null;
+            }
+        }
+
+        async function updateCurrency() 
+        {
+            let selectedCurrency = document.getElementById("currency").value;
+            let exchangeRate = await fetchExchangeRate(selectedCurrency);
+
+            if (exchangeRate) 
+            {
+                let convertedAmount = (assetValue * exchangeRate).toFixed(2);
+                document.getElementById("convertedValue").innerText = ${convertedAmount} ${selectedCurrency};
+            } 
+            else 
+            {
+                document.getElementById("convertedValue").innerText = "Error fetching rate";
+            }
+        }
+
+        document.getElementById("currency").addEventListener("change", updateCurrency);
+    </script>
+
+</body>
+</html>
